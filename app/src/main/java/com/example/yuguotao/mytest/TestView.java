@@ -4,15 +4,19 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
+
+import java.util.ArrayList;
 
 /**
  * Created by yuguotao on 16/7/22.
@@ -23,11 +27,13 @@ public class TestView extends View {
     float R;
     float degree;
     float operatorDegree;
-    int NumTime = 50;
     PointF leftPoint;
     PointF rightPoint;
+    ArrayList<PointF> operationPoints=new ArrayList<>();
 
     Paint p;
+    Paint gradientPaint;
+    LinearGradient shader;
 
     public TestView(Context context) {
         super(context);
@@ -48,6 +54,9 @@ public class TestView extends View {
         p = new Paint();
         p.setStyle(Paint.Style.STROKE);
         p.setColor(Color.RED);
+        p.setStrokeWidth(5*getResources().getDisplayMetrics().density);
+        gradientPaint = new Paint();
+
     }
 
     @Override
@@ -69,13 +78,22 @@ public class TestView extends View {
 //
 //            }
 //        },20);
-
+        operationPoints.add(getOperatorPoint());
+        for (int i = 1; i < operationPoints.size(); i++) {
+            PointF operationPoint = operationPoints.get(i);
+            PointF lastOperationPoint = operationPoints.get(i-1);
+            shader = new LinearGradient(operationPoint.x,operationPoint.y,operationPoint.x,leftPoint.y+10*getResources().getDisplayMetrics().density,Color.BLUE,Color.WHITE, Shader.TileMode.MIRROR);
+            gradientPaint.setShader(shader);
+            canvas.drawRect(lastOperationPoint.x,lastOperationPoint.y,operationPoint.x,leftPoint.y+10*getResources().getDisplayMetrics().density,gradientPaint);
+        }
     }
 
-    public void startAnim(){
+    public void startInitAnim(){
         postDelayed(new Runnable() {
             @Override
             public void run() {
+                operatorDegree = 0;
+                operationPoints.clear();
                 ValueAnimator animator = ValueAnimator.ofFloat(0,-degree);
                 animator.setDuration(1000);
                 animator.setInterpolator(new LinearInterpolator());
@@ -100,8 +118,8 @@ public class TestView extends View {
         degree = getDegree();
     }
 
-    private void drawArc(PointF left,PointF right,Path path){
-
+    private PointF getOperatorPoint(){
+        return new PointF((float)(leftPoint.x+R*Math.sin(Math.toRadians(Math.abs(operatorDegree)))),(float)(leftPoint.y-(R-R*Math.cos(Math.toRadians(Math.abs(operatorDegree))))));
     }
 
     private PointF getLeftPoint(){
