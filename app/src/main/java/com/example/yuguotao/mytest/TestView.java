@@ -58,11 +58,11 @@ public class TestView extends View {
     private void init() {
         p = new Paint();
         p.setStyle(Paint.Style.STROKE);
-        p.setColor(Color.RED);
-        p.setStrokeWidth(5 * getResources().getDisplayMetrics().density);
+        p.setColor(Color.WHITE);
+        p.setStrokeWidth(3 * getResources().getDisplayMetrics().density);
         gradientPaint = new Paint();
         keyPointPaint = new Paint();
-        keyPointPaint.setColor(Color.YELLOW);
+        keyPointPaint.setColor(Color.WHITE);
         keyPointPaint.setStyle(Paint.Style.FILL);
     }
 
@@ -105,7 +105,7 @@ public class TestView extends View {
         for (int i = 1; i < operationPoints.size(); i++) {
             PointF operationPoint = operationPoints.get(i);
             PointF lastOperationPoint = operationPoints.get(i - 1);
-            shader = new LinearGradient(operationPoint.x, operationPoint.y, operationPoint.x, leftPoint.y + 10 * getResources().getDisplayMetrics().density, Color.BLUE, Color.WHITE, Shader.TileMode.MIRROR);
+            shader = new LinearGradient(operationPoint.x, operationPoint.y, operationPoint.x, leftPoint.y + 10 * getResources().getDisplayMetrics().density, 0x77FFFFFF, 0x00FFFFFF, Shader.TileMode.MIRROR);
             gradientPaint.setShader(shader);
             canvas.drawRect(lastOperationPoint.x, lastOperationPoint.y, operationPoint.x, leftPoint.y + 10 * getResources().getDisplayMetrics().density, gradientPaint);
         }
