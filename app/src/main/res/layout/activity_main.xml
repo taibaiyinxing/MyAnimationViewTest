@@ -18,9 +18,16 @@
         android:layout_height="wrap_content"
         android:text="Hello World!" />
 
-    <com.example.yuguotao.mytest.TestView2
+    <com.example.yuguotao.mytest.TestView
         android:id="@+id/test"
         android:layout_width="340dp"
         android:layout_height="160dp"
         android:layout_marginTop="40dp"/>
+
+    <com.example.yuguotao.mytest.AnimProgressbar
+        android:id="@+id/progressbar"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:layout_below="@id/test"
+        android:layout_marginTop="20dp"/>
 </RelativeLayout>
