@@ -2,13 +2,15 @@ package com.example.yuguotao.mytest;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Point;
 import android.graphics.PointF;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.util.AttributeSet;
@@ -22,23 +24,42 @@ import java.util.ArrayList;
  * Created by yuguotao on 16/7/22.
  */
 public class TestView extends View {
-    float height;
-    float width;
-    float R;
-    float degree;
-    float operatorDegree;
-    long duration = 1000;
-    PointF leftPoint;
-    PointF rightPoint;
-    ArrayList<PointF> operationPoints = new ArrayList<>();
-    ArrayList<PointF> keyPoints;
+    private float height;
+    private float width;
+    private float R;
+    private float degree;
+    private float operatorDegree;
+    private long duration = 1000;
+    private float density;
+    private PointF leftPoint;
+    private PointF rightPoint;
+    private ArrayList<PointF> operationPoints = new ArrayList<>();
+    private ArrayList<PointF> keyPoints;
+    private String[] keyPointTitles;
 
-    Paint p;
-    Paint gradientPaint;
-    Paint keyPointPaint;
-    LinearGradient shader;
+    private float fullScore = 5;
+    private float mScore;
+    private PointF mScorePoint;
 
-    Canvas mCanvas;
+    private Bitmap headerMap;
+    private Bitmap helperHeaderMap;
+    private Bitmap headerBG;
+
+    private Paint p;
+    private Paint gradientPaint;
+    private Paint keyPointPaint;
+    private Paint keyPointTitlePaint;
+    private LinearGradient shader;
+
+    private Canvas mCanvas;
+    private int mType;
+
+    private boolean isInitAnimationRunning;
+    private boolean hasScore = false;
+
+    public static int MONEY = 0;
+    public static int LOVE = 1;
+    public static int HEALTH = 2;
 
     public TestView(Context context) {
         super(context);
@@ -55,24 +76,61 @@ public class TestView extends View {
         init();
     }
 
+    public void setType(int type) {
+        this.mType = type;
+    }
+
+    public void setScoreAndHeader(final float score, Bitmap headerMap) {
+//        this.mScore = score;
+        this.headerMap = headerMap;
+        hasScore = true;
+
+        postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                ValueAnimator animator = ValueAnimator.ofFloat(0,score);
+                animator.setDuration(duration);
+                animator.setInterpolator(new LinearInterpolator());
+                animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        mScore = (float) animation.getAnimatedValue();
+                        mScorePoint = getPointWithLenth(mScore / fullScore * (rightPoint.x - leftPoint.x));
+                        invalidate();
+                    }
+                });
+                animator.start();
+            }
+        },400);
+    }
+
     private void init() {
+        density = getResources().getDisplayMetrics().density;
         p = new Paint();
         p.setStyle(Paint.Style.STROKE);
         p.setColor(Color.WHITE);
-        p.setStrokeWidth(3 * getResources().getDisplayMetrics().density);
+        p.setStrokeWidth(3 * density);
         gradientPaint = new Paint();
         keyPointPaint = new Paint();
         keyPointPaint.setColor(Color.WHITE);
         keyPointPaint.setStyle(Paint.Style.FILL);
+        keyPointTitlePaint = new Paint();
+        keyPointTitlePaint.setTextSize(12 * density);
+        keyPointTitlePaint.setColor(0xA3FFFFFF);
+        p.setAntiAlias(true);
+        gradientPaint.setAntiAlias(true);
     }
 
-    public void initKeyPoints(int Number) {
+    private void initKeyPoints() {
 
         if (keyPoints == null) {
             keyPoints = new ArrayList<>();
         } else {
             keyPoints.clear();
         }
+        if (keyPointTitles == null)
+            return;
+        int Number = keyPointTitles.length;
         if (Number < 2) {
             return;
         }
@@ -81,6 +139,10 @@ public class TestView extends View {
         for (int i = 1; i < Number; i++) {
             keyPoints.add(getPointWithLenth(itemLength * i));
         }
+    }
+
+    public void setKeyPointTitles(String[] values) {
+        this.keyPointTitles = values;
     }
 
     private PointF getPointWithLenth(float length) {
@@ -105,9 +167,9 @@ public class TestView extends View {
         for (int i = 1; i < operationPoints.size(); i++) {
             PointF operationPoint = operationPoints.get(i);
             PointF lastOperationPoint = operationPoints.get(i - 1);
-            shader = new LinearGradient(operationPoint.x, operationPoint.y, operationPoint.x, leftPoint.y + 10 * getResources().getDisplayMetrics().density, 0x77FFFFFF, 0x00FFFFFF, Shader.TileMode.MIRROR);
+            shader = new LinearGradient(operationPoint.x, operationPoint.y, operationPoint.x, leftPoint.y + 10 * density, 0x77FFFFFF, 0x00FFFFFF, Shader.TileMode.MIRROR);
             gradientPaint.setShader(shader);
-            canvas.drawRect(lastOperationPoint.x, lastOperationPoint.y, operationPoint.x, leftPoint.y + 10 * getResources().getDisplayMetrics().density, gradientPaint);
+            canvas.drawRect(lastOperationPoint.x, lastOperationPoint.y, operationPoint.x, leftPoint.y + 10 * density, gradientPaint);
         }
 
         //画圆弧
@@ -118,9 +180,21 @@ public class TestView extends View {
 
         //画关键点
         if (keyPoints != null && keyPoints.size() > 0) {
-            for (PointF point : keyPoints) {
-                canvas.drawCircle(point.x, point.y, 5 * getResources().getDisplayMetrics().density, keyPointPaint);
+            for (int i = 0; i < keyPoints.size(); i++) {
+                PointF point = keyPoints.get(i);
+                canvas.drawCircle(point.x, point.y, 5 * density, keyPointPaint);
+                String title = keyPointTitles[i];
+                int l = title.length();
+                Rect rect = new Rect();
+                keyPointTitlePaint.getTextBounds(title, 0, l, rect);
+                canvas.drawText(title, point.x - rect.width() / 2, point.y + 8 * density + rect.height(), keyPointTitlePaint);
             }
+        }
+
+        //画头像与分数
+        if (hasScore){
+            canvas.drawBitmap(headerBG,mScorePoint.x-25,mScorePoint.y-100,p);
+            //TODO:画头像
         }
     }
 
@@ -129,6 +203,7 @@ public class TestView extends View {
             @Override
             public void run() {
                 operatorDegree = 0;
+                isInitAnimationRunning = false;
                 operationPoints.clear();
                 ValueAnimator animator = ValueAnimator.ofFloat(0, -degree);
                 animator.setDuration(duration);
@@ -137,6 +212,7 @@ public class TestView extends View {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
                         operatorDegree = (float) animation.getAnimatedValue();
+                        isInitAnimationRunning = operatorDegree != -degree;
                         invalidate();
                     }
                 });
@@ -152,7 +228,9 @@ public class TestView extends View {
         rightPoint = getRightPoint();
         R = getR();
         degree = getDegree();
-        initKeyPoints(4);
+        initKeyPoints();
+        headerBG = BitmapFactory.decodeResource(getResources(), com.example.yuguotao.mytest.R.mipmap.result_head_frame);
+
     }
 
     private PointF getOperatorPoint() {
@@ -160,11 +238,11 @@ public class TestView extends View {
     }
 
     private PointF getLeftPoint() {
-        return new PointF(20 * (getResources().getDisplayMetrics().density), height - 20 * (getResources().getDisplayMetrics().density));
+        return new PointF(20 * (density), height - 20 * (density));
     }
 
     private PointF getRightPoint() {
-        return new PointF(width - 20 * (getResources().getDisplayMetrics().density), 40 * (getResources().getDisplayMetrics().density));
+        return new PointF(width - 20 * (density), 40 * (density));
     }
 
     private float getR() {
