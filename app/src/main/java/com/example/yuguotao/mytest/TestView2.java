@@ -21,12 +21,13 @@ import java.util.ArrayList;
 /**
  * Created by yuguotao on 16/7/22.
  */
-public class TestView extends View {
+public class TestView2 extends View {
     float height;
     float width;
     float R;
     float degree;
     float operatorDegree;
+    float lastOperatorDegree;
     long duration = 1000;
     PointF leftPoint;
     PointF rightPoint;
@@ -37,20 +38,21 @@ public class TestView extends View {
     Paint gradientPaint;
     Paint keyPointPaint;
     LinearGradient shader;
+    Path path;
 
     Canvas mCanvas;
 
-    public TestView(Context context) {
+    public TestView2(Context context) {
         super(context);
         init();
     }
 
-    public TestView(Context context, AttributeSet attrs) {
+    public TestView2(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public TestView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public TestView2(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
@@ -64,6 +66,7 @@ public class TestView extends View {
         keyPointPaint = new Paint();
         keyPointPaint.setColor(Color.YELLOW);
         keyPointPaint.setStyle(Paint.Style.FILL);
+        path = new Path();
     }
 
     public void initKeyPoints(int Number) {
@@ -111,7 +114,7 @@ public class TestView extends View {
         }
 
         //画圆弧
-        final Path path = new Path();
+
         path.moveTo(leftPoint.x, leftPoint.y);
         path.arcTo(new RectF(leftPoint.x - R, leftPoint.y - 2 * R, leftPoint.x + R, leftPoint.y), 90, operatorDegree, false);
         canvas.drawPath(path, p);
@@ -129,6 +132,7 @@ public class TestView extends View {
             @Override
             public void run() {
                 operatorDegree = 0;
+                lastOperatorDegree = 0;
                 operationPoints.clear();
                 ValueAnimator animator = ValueAnimator.ofFloat(0, -degree);
                 animator.setDuration(duration);
@@ -136,13 +140,21 @@ public class TestView extends View {
                 animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
+                        lastOperatorDegree = operatorDegree;
                         operatorDegree = (float) animation.getAnimatedValue();
-                        invalidate();
+//                        invalidate();
+                        drawView();
                     }
                 });
                 animator.start();
             }
         }, 100);
+    }
+
+    private void drawView(){
+        path.arcTo(new RectF(leftPoint.x - R, leftPoint.y - 2 * R, leftPoint.x + R, leftPoint.y), lastOperatorDegree, operatorDegree-lastOperatorDegree, false);
+        Log.e("mCanvas",mCanvas.toString());
+        mCanvas.drawPath(path, p);
     }
 
     private void initDate() {
@@ -175,3 +187,4 @@ public class TestView extends View {
         return (float) Math.toDegrees(Math.asin((rightPoint.x - leftPoint.x) / R));
     }
 }
+
