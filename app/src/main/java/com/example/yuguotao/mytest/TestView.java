@@ -10,6 +10,8 @@ import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
@@ -80,15 +82,25 @@ public class TestView extends View {
         this.mType = type;
     }
 
+    public int getType() {
+        return this.mType;
+    }
+
+    public String[] getKeyPointTitles() {
+        return this.keyPointTitles;
+    }
+
     public void setScoreAndHeader(final float score, Bitmap headerMap) {
-//        this.mScore = score;
-        this.headerMap = headerMap;
+
+//        this.headerMap = headerMap;
+        this.headerMap = getCircleImage(BitmapFactory.decodeResource(getResources(), com.example.yuguotao.mytest.R.mipmap.ic_launcher));
+
         hasScore = true;
 
         postDelayed(new Runnable() {
             @Override
             public void run() {
-                ValueAnimator animator = ValueAnimator.ofFloat(0,score);
+                ValueAnimator animator = ValueAnimator.ofFloat(0, score);
                 animator.setDuration(duration);
                 animator.setInterpolator(new LinearInterpolator());
                 animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -101,7 +113,7 @@ public class TestView extends View {
                 });
                 animator.start();
             }
-        },400);
+        }, 400);
     }
 
     private void init() {
@@ -192,9 +204,11 @@ public class TestView extends View {
         }
 
         //画头像与分数
-        if (hasScore){
-            canvas.drawBitmap(headerBG,mScorePoint.x-25,mScorePoint.y-100,p);
+        if (hasScore) {
+//            p.setAlpha(100);
+            canvas.drawBitmap(headerBG, mScorePoint.x - 25, mScorePoint.y - 100, p);
             //TODO:画头像
+            canvas.drawBitmap(headerMap, mScorePoint.x - 25, mScorePoint.y - 100, p);
         }
     }
 
@@ -251,5 +265,49 @@ public class TestView extends View {
 
     private float getDegree() {
         return (float) Math.toDegrees(Math.asin((rightPoint.x - leftPoint.x) / R));
+    }
+
+    private Bitmap getCircleImage(Bitmap bitmap) {
+        int bmpW = bitmap.getWidth();
+        int bmpH = bitmap.getHeight();
+        int squreW = 0;
+        int x = 0;
+        int y = 0;
+        int finalL = (int) (24 * density);
+        Bitmap squreBmp;
+        Bitmap scaledBitmap;
+        if (bmpH > bmpW) {
+            squreW = bmpW;
+            x = 0;
+            y = (bmpH - bmpW) / 2;
+            squreBmp = Bitmap.createBitmap(bitmap, x, y, squreW, squreW);
+        } else if (bmpH < bmpW) {
+            squreW = bmpH;
+            x = (bmpW - bmpH) / 2;
+            y = 0;
+            squreBmp = Bitmap.createBitmap(bitmap, x, y, squreW, squreW);
+        } else {
+            squreBmp = bitmap;
+        }
+        if (squreW != finalL) {
+            scaledBitmap = Bitmap.createScaledBitmap(squreBmp, finalL, finalL, true);
+        } else {
+            scaledBitmap = squreBmp;
+        }
+
+        Bitmap output = Bitmap.createBitmap(finalL, finalL, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(output);
+        Paint paint = new Paint();
+        Rect rect = new Rect(0, 0, scaledBitmap.getWidth(), scaledBitmap.getHeight());
+        paint.setAntiAlias(true);
+        paint.setDither(true);
+        canvas.drawARGB(0, 0, 0, 0);
+        canvas.drawCircle(scaledBitmap.getWidth() / 2, scaledBitmap.getHeight() / 2, scaledBitmap.getWidth() / 2, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(scaledBitmap, rect, rect, paint);
+        bitmap = null;
+        squreBmp = null;
+        scaledBitmap = null;
+        return output;
     }
 }
